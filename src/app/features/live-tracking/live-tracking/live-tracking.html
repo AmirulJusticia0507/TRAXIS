@@ -14,6 +14,8 @@
 } @else if (loading()) {
   <app-skeleton-loader [rows]="4" [cols]="4" />
 } @else {
+  <app-live-map class="tracking-map" [positions]="positions()" />
+
   <div class="tracking-grid" data-testid="tracking-grid">
     @for (position of positions(); track position.train.id) {
       <article class="tracking-card">

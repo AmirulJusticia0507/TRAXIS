@@ -5,6 +5,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import type { TrainPosition } from '../../../core/models/position.model';
 import { ApiService } from '../../../core/services/api.service';
 import { ErrorState } from '../../../shared/components/error-state/error-state';
+import { LiveMap } from '../../../shared/components/live-map/live-map';
 import { PageHeader } from '../../../shared/components/page-header/page-header';
 import { SkeletonLoader } from '../../../shared/components/skeleton-loader/skeleton-loader';
 import { StatusBadge } from '../../../shared/components/status-badge/status-badge';
@@ -16,7 +17,7 @@ import { formatDateTime, formatTime } from '../../../shared/utils/format';
  */
 @Component({
   selector: 'app-live-tracking',
-  imports: [ErrorState, PageHeader, SkeletonLoader, StatusBadge],
+  imports: [ErrorState, LiveMap, PageHeader, SkeletonLoader, StatusBadge],
   templateUrl: './live-tracking.html',
   styleUrl: './live-tracking.scss'
 })

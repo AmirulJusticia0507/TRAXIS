@@ -1,8 +1,16 @@
+import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 
 import { mockApiInterceptor } from '../../../core/interceptors/mock-api.interceptor';
+import { LiveMap } from '../../../shared/components/live-map/live-map';
 import { LiveTracking } from './live-tracking';
+
+@Component({
+  selector: 'app-live-map',
+  template: ''
+})
+class LiveMapStub {}
 
 describe('LiveTracking', () => {
   let component: LiveTracking;
@@ -12,7 +20,12 @@ describe('LiveTracking', () => {
     await TestBed.configureTestingModule({
       imports: [LiveTracking],
       providers: [provideHttpClient(withInterceptors([mockApiInterceptor]))]
-    }).compileComponents();
+    })
+      .overrideComponent(LiveTracking, {
+        remove: { imports: [LiveMap] },
+        add: { imports: [LiveMapStub] }
+      })
+      .compileComponents();
 
     fixture = TestBed.createComponent(LiveTracking);
     component = fixture.componentInstance;
