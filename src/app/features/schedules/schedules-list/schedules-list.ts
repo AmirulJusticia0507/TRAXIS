@@ -53,10 +53,15 @@ export class SchedulesList {
   protected readonly statusOptions = SCHEDULE_STATUSES;
 
   protected readonly columns: TableColumn<Schedule>[] = [
-    { key: 'train_code', header: 'Kode Kereta', sortable: true },
-    { key: 'line_name', header: 'Jalur / Line', sortable: true },
-    { key: 'origin_station', header: 'Stasiun Asal', sortable: true },
-    { key: 'destination_station', header: 'Stasiun Tujuan', sortable: true },
+    { key: 'train_code', header: 'Kode Kereta', sortable: true, render: (s) => s.train.trainCode },
+    { key: 'line_name', header: 'Jalur / Line', sortable: true, render: (s) => s.train.line.name },
+    { key: 'origin_station', header: 'Stasiun Asal', sortable: true, render: (s) => s.originStation.name },
+    {
+      key: 'destination_station',
+      header: 'Stasiun Tujuan',
+      sortable: true,
+      render: (s) => s.destinationStation.name
+    },
     {
       key: 'departure_time',
       header: 'Jam Berangkat',

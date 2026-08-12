@@ -22,4 +22,19 @@ describe('StationsList', () => {
   it('should create', () => {
     expect(component).toBeTruthy();
   });
+
+  it('renders station rows with data in each column', async () => {
+    const text = fixture.nativeElement.textContent;
+    expect(text).toContain('Lebak Bulus');
+    expect(text).toContain('MRT North-South Line');
+    expect(text).toContain('MRT');
+  });
+
+  it('does not render empty cells', async () => {
+    const cells = Array.from(
+      fixture.nativeElement.querySelectorAll('td')
+    ) as HTMLTableCellElement[];
+    expect(cells.length).toBeGreaterThan(0);
+    expect(cells.every((cell) => cell.textContent?.trim().length)).toBe(true);
+  });
 });

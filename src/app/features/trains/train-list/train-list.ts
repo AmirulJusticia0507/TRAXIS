@@ -46,8 +46,8 @@ export class TrainList {
   protected readonly statusOptions = TRAIN_STATUSES;
 
   protected readonly columns: TableColumn<Train>[] = [
-    { key: 'train_code', header: 'Kode Kereta', sortable: true },
-    { key: 'line_name', header: 'Jalur / Line', sortable: true },
+    { key: 'train_code', header: 'Kode Kereta', sortable: true, render: (t) => t.trainCode },
+    { key: 'line_name', header: 'Jalur / Line', sortable: true, render: (t) => t.line.name },
     {
       key: 'capacity',
       header: 'Kapasitas',

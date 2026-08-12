@@ -38,8 +38,8 @@ export class IncidentList {
 
   protected readonly columns: TableColumn<Incident>[] = [
     { key: 'id', header: 'ID', sortable: true },
-    { key: 'line_type', header: 'Line', sortable: true },
-    { key: 'location_station', header: 'Lokasi Stasiun', sortable: true },
+    { key: 'line_type', header: 'Line', sortable: true, render: (i) => i.lineType },
+    { key: 'location_station', header: 'Lokasi Stasiun', sortable: true, render: (i) => i.locationStation },
     {
       key: 'delay_duration_minutes',
       header: 'Durasi (menit)',

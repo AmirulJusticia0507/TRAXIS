@@ -26,4 +26,22 @@ describe('IncidentList', () => {
   it('should create', () => {
     expect(component).toBeTruthy();
   });
+
+  it('renders incident rows with data in each column', async () => {
+    const text = fixture.nativeElement.textContent;
+    expect(text).toContain('KRL');
+    expect(text).toContain('Manggarai');
+    expect(text).toContain('Resolved');
+  });
+
+  it('does not render empty cells for mapped columns', async () => {
+    const rows = fixture.nativeElement.querySelectorAll('[data-testid="table-row"]');
+    expect(rows.length).toBeGreaterThan(0);
+    for (const row of Array.from(rows) as HTMLTableRowElement[]) {
+      const cells = Array.from(
+        row.querySelectorAll('td')
+      ).slice(0, 6) as HTMLTableCellElement[];
+      expect(cells.every((cell) => cell.textContent?.trim().length)).toBe(true);
+    }
+  });
 });

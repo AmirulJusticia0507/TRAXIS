@@ -26,4 +26,19 @@ describe('TrainList', () => {
   it('should create', () => {
     expect(component).toBeTruthy();
   });
+
+  it('renders train rows with data in each column', async () => {
+    const text = fixture.nativeElement.textContent;
+    expect(text).toContain('MRT-NS-101');
+    expect(text).toContain('MRT North-South Line');
+    expect(text).toContain('Active');
+  });
+
+  it('does not render empty cells for mapped columns', async () => {
+    const cells = Array.from(
+      fixture.nativeElement.querySelectorAll('td')
+    ) as HTMLTableCellElement[];
+    expect(cells.length).toBeGreaterThan(0);
+    expect(cells.every((cell) => cell.textContent?.trim().length)).toBe(true);
+  });
 });
