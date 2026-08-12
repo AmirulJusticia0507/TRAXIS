@@ -1,0 +1,29 @@
+{
+  "terminal.integrated.defaultProfile.linux": "bash",
+  "terminal.integrated.profiles.linux": {
+    "bash": {
+      "path": "/bin/bash",
+      "icon": "terminal-bash"
+    }
+  },
+  "workbench.colorCustomizations": {
+    "terminal.background": "#ffffff",
+    "terminal.foreground": "#1e293b",
+    "terminal.ansiBlack": "#1e293b",
+    "terminal.ansiBrightBlack": "#64748b",
+    "terminal.ansiRed": "#ef4444",
+    "terminal.ansiBrightRed": "#f87171",
+    "terminal.ansiGreen": "#16a34a",
+    "terminal.ansiBrightGreen": "#4ade80",
+    "terminal.ansiYellow": "#b45309",
+    "terminal.ansiBrightYellow": "#f59e0b",
+    "terminal.ansiBlue": "#00529b",
+    "terminal.ansiBrightBlue": "#3b82f6",
+    "terminal.ansiMagenta": "#a855f7",
+    "terminal.ansiBrightMagenta": "#c084fc",
+    "terminal.ansiCyan": "#0891b2",
+    "terminal.ansiBrightCyan": "#22d3ee",
+    "terminal.ansiWhite": "#e2e8f0",
+    "terminal.ansiBrightWhite": "#ffffff"
+  }
+}
