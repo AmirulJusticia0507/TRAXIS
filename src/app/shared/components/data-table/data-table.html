@@ -1,0 +1,53 @@
+<div class="data-table" data-testid="data-table">
+  <table>
+    <thead>
+      <tr>
+        @for (column of columns(); track column.key) {
+          <th
+            class="data-table__th"
+            [class.data-table__th--sortable]="column.sortable"
+            [attr.data-testid]="'sort-' + column.key"
+            (click)="onSort(column)"
+          >
+            <span>{{ column.header }}</span>
+            @if (sortKey() === column.key) {
+              <span class="data-table__indicator">{{ sortIndicator() }}</span>
+            }
+          </th>
+        }
+      </tr>
+    </thead>
+    <tbody>
+      @if (loading()) {
+        <tr>
+          <td [attr.colspan]="columns().length" class="data-table__skeleton">
+            <app-skeleton-loader [rows]="5" [cols]="columns().length" />
+          </td>
+        </tr>
+      } @else if (data().length === 0) {
+        <tr>
+          <td [attr.colspan]="columns().length" class="data-table__empty">
+            {{ emptyMessage() }}
+          </td>
+        </tr>
+      } @else {
+        @for (row of data(); track trackRow($index, row)) {
+          <tr class="data-table__row" data-testid="table-row">
+            @for (column of columns(); track column.key) {
+              <td [class]="'data-table__td--' + columnAlign(column)">
+                @if (column.cellTemplate) {
+                  <ng-container
+                    [ngTemplateOutlet]="column.cellTemplate"
+                    [ngTemplateOutletContext]="{ $implicit: row }"
+                  />
+                } @else {
+                  {{ cellValue(row, column) }}
+                }
+              </td>
+            }
+          </tr>
+        }
+      }
+    </tbody>
+  </table>
+</div>

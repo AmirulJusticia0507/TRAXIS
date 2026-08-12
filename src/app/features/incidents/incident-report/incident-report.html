@@ -1,0 +1,122 @@
+<app-page-header
+  title="Pencatatan Insiden Jalur"
+  subtitle="Laporan gangguan operasional yang sedang berlangsung"
+>
+  <a class="btn btn--secondary" routerLink="/incidents" pageHeaderActions>Kembali</a>
+</app-page-header>
+
+@if (error(); as message) {
+  <app-error-state [message]="message" (retry)="error.set(null)" />
+}
+
+<form
+  class="form"
+  [formGroup]="form"
+  (ngSubmit)="onSubmit()"
+  novalidate
+  data-testid="incident-form"
+>
+  <div class="form__row">
+    <div class="form__field">
+      <label class="form__label" for="lineType">Line (MRT/KRL)</label>
+      <select
+        id="lineType"
+        class="form__input"
+        formControlName="lineType"
+        data-testid="input-incident-line"
+      >
+        <option value="MRT">MRT</option>
+        <option value="KRL">KRL</option>
+      </select>
+      @if (form.controls.lineType.touched && form.controls.lineType.invalid) {
+        <p class="form__error" data-testid="error-incident-line">Line (MRT/KRL) harus dipilih.</p>
+      }
+    </div>
+
+    <div class="form__field">
+      <label class="form__label" for="trainId">Armada Kereta</label>
+      <select
+        id="trainId"
+        class="form__input"
+        formControlName="trainId"
+        data-testid="input-incident-train"
+      >
+        <option [ngValue]="null" disabled>Pilih armada...</option>
+        @for (train of trains(); track train.id) {
+          <option [ngValue]="train.id">{{ train.trainCode }} ({{ train.line.name }})</option>
+        }
+      </select>
+      @if (form.controls.trainId.touched && form.controls.trainId.invalid) {
+        <p class="form__error" data-testid="error-incident-train">Armada kereta wajib dipilih.</p>
+      }
+    </div>
+  </div>
+
+  <div class="form__row">
+    <div class="form__field">
+      <label class="form__label" for="locationStation">Lokasi Stasiun</label>
+      <input
+        id="locationStation"
+        class="form__input"
+        type="text"
+        formControlName="locationStation"
+        placeholder="Contoh: Blok M"
+        data-testid="input-incident-station"
+      />
+      @if (form.controls.locationStation.touched && form.controls.locationStation.invalid) {
+        <p class="form__error" data-testid="error-incident-station">
+          Lokasi stasiun minimal 3 karakter.
+        </p>
+      }
+    </div>
+
+    <div class="form__field">
+      <label class="form__label" for="delayDuration">Durasi Keterlambatan (menit)</label>
+      <input
+        id="delayDuration"
+        class="form__input"
+        type="number"
+        min="0"
+        max="300"
+        formControlName="delayDuration"
+        data-testid="input-incident-duration"
+      />
+      @if (form.controls.delayDuration.touched && form.controls.delayDuration.invalid) {
+        <p class="form__error" data-testid="error-incident-duration">
+          Durasi keterlambatan 0-300 menit.
+        </p>
+      }
+    </div>
+  </div>
+
+  <div class="form__field">
+    <label class="form__label" for="description">Deskripsi</label>
+    <textarea
+      id="description"
+      class="form__input form__textarea"
+      rows="4"
+      formControlName="description"
+      placeholder="Uraikan kejadian secara singkat..."
+      data-testid="input-incident-description"
+    ></textarea>
+    <div class="form__hint">
+      {{ form.controls.description.value.length }}/500 karakter
+      @if (form.controls.description.touched && form.controls.description.invalid) {
+        <span class="form__error" data-testid="error-incident-description">
+          Deskripsi wajib diisi, maksimal 500 karakter.
+        </span>
+      }
+    </div>
+  </div>
+
+  <div class="form__actions">
+    <button
+      type="submit"
+      class="btn btn--primary"
+      data-testid="btn-submit-incident"
+      [disabled]="form.invalid || submitting()"
+    >
+      {{ submitting() ? 'Mengirim...' : 'Kirim Laporan' }}
+    </button>
+  </div>
+</form>

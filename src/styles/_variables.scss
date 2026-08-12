@@ -1,0 +1,30 @@
+// TRAXIS Design Tokens
+// Sinkron dengan STYLES.md (Brand Colors, Status Colors, Spacing)
+
+// Brand Colors (Transit Palette)
+$mrt-primary: #00529b; // Classic Blue MRT
+$krl-primary: #c8102e; // Commuter Red KRL
+$bg-main: #f4f6f8;
+$text-dark: #1e293b;
+
+// Status Colors
+$status-active: #10b981;
+$status-warning: #f59e0b;
+$status-critical: #ef4444;
+
+// Spacing
+$spacing-xs: 4px;
+$spacing-sm: 8px;
+$spacing-md: 16px;
+$spacing-lg: 24px;
+
+// Surface & Border
+$color-surface: #ffffff;
+$color-border: #e2e8f0;
+$color-text-muted: #64748b;
+
+// Layout
+$header-height: 56px;
+$radius-md: 8px;
+$radius-sm: 4px;
+$shadow-sm: 0 1px 2px rgb(0 0 0 / 5%);

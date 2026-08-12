@@ -1,0 +1,28 @@
+<app-page-header
+  title="Referensi Stasiun"
+  subtitle="Daftar stasiun MRT & KRL yang terdaftar pada sistem"
+>
+  <select
+    class="filters__select"
+    pageHeaderActions
+    data-testid="station-filter-line"
+    [value]="lineFilter()"
+    (change)="onLineChange($event)"
+  >
+    <option value="">Semua Jalur</option>
+    @for (line of lines(); track line.id) {
+      <option [value]="line.code">{{ line.name }} ({{ line.type }})</option>
+    }
+  </select>
+</app-page-header>
+
+@if (error(); as message) {
+  <app-error-state [message]="message" (retry)="retry()" />
+} @else {
+  <app-data-table
+    [columns]="columns"
+    [data]="data()"
+    [loading]="loading()"
+    emptyMessage="Tidak ada stasiun yang cocok."
+  />
+}

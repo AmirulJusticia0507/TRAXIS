@@ -1,0 +1,39 @@
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-lg);
+  color: var(--color-text-muted);
+
+  &__icon {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--status-critical) 12%, transparent);
+    color: var(--status-critical);
+    font-weight: 700;
+  }
+
+  &__message {
+    margin: 0;
+    font-size: 0.875rem;
+    text-align: center;
+  }
+
+  &__button {
+    padding: 6px var(--spacing-md);
+    border: 1px solid var(--status-critical);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    color: var(--status-critical);
+    cursor: pointer;
+    font-size: 0.8125rem;
+
+    &:hover {
+      background: color-mix(in srgb, var(--status-critical) 8%, transparent);
+    }
+  }
+}

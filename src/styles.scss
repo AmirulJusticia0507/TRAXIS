@@ -1,0 +1,4 @@
+/* Global styles entry - TRAXIS
+   Design tokens & base styles dipecah menjadi partials di src/styles/ */
+@use './styles/variables' as *;
+@use './styles/base';

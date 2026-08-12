@@ -1,0 +1,54 @@
+<div class="app-shell">
+  <header class="app-header">
+    <a class="app-brand" routerLink="/" data-testid="brand-link">
+      <span class="app-brand__dot" aria-hidden="true"></span>
+      TRAXIS
+    </a>
+    <nav class="app-nav" aria-label="Navigasi utama" data-testid="main-nav">
+      <a
+        class="app-nav__link"
+        routerLink="/schedules"
+        routerLinkActive="app-nav__link--active"
+        data-testid="nav-schedules"
+      >
+        Jadwal
+      </a>
+      <a
+        class="app-nav__link"
+        routerLink="/trains"
+        routerLinkActive="app-nav__link--active"
+        data-testid="nav-trains"
+      >
+        Armada
+      </a>
+      <a
+        class="app-nav__link"
+        routerLink="/incidents"
+        routerLinkActive="app-nav__link--active"
+        data-testid="nav-incidents"
+      >
+        Insiden
+      </a>
+      <a
+        class="app-nav__link"
+        routerLink="/stations"
+        routerLinkActive="app-nav__link--active"
+        data-testid="nav-stations"
+      >
+        Stasiun
+      </a>
+      <a
+        class="app-nav__link"
+        routerLink="/live"
+        routerLinkActive="app-nav__link--active"
+        data-testid="nav-live"
+      >
+        Live Tracking
+      </a>
+    </nav>
+  </header>
+
+  <main class="app-main">
+    <router-outlet />
+  </main>
+</div>

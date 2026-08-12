@@ -1,0 +1,64 @@
+<app-page-header
+  title="Jadwal Real-time Kereta"
+  subtitle="Data jadwal MRT & KRL - sinkron dengan v_schedule_summary di PostgreSQL"
+>
+  <div class="filters" pageHeaderActions>
+    <input
+      class="filters__search"
+      type="search"
+      placeholder="Cari kode kereta / stasiun..."
+      data-testid="schedule-search"
+      [value]="searchTerm()"
+      (input)="onSearchInput($event)"
+    />
+    <select
+      class="filters__select"
+      data-testid="schedule-filter-line"
+      [value]="lineFilter()"
+      (change)="onLineChange($event)"
+    >
+      <option value="">Semua Jalur</option>
+      @for (line of lines(); track line.id) {
+        <option [value]="line.code">{{ line.name }} ({{ line.type }})</option>
+      }
+    </select>
+    <select
+      class="filters__select"
+      data-testid="schedule-filter-status"
+      [value]="statusFilter()"
+      (change)="onStatusChange($event)"
+    >
+      <option value="">Semua Status</option>
+      @for (status of statusOptions; track status) {
+        <option [value]="status">{{ status }}</option>
+      }
+    </select>
+  </div>
+</app-page-header>
+
+<ng-template #statusCell let-row>
+  <app-status-badge [status]="row.status" />
+</ng-template>
+
+@if (error(); as message) {
+  <app-error-state [message]="message" (retry)="retry()" />
+} @else {
+  <app-data-table
+    [columns]="columns"
+    [data]="data()"
+    [loading]="loading()"
+    [sortKey]="sortKey()"
+    [sortOrder]="sortOrder()"
+    emptyMessage="Tidak ada jadwal yang cocok dengan filter."
+    (sortChange)="onSortChange($event)"
+  />
+
+  @if (meta(); as m) {
+    <app-paginator
+      [page]="m.page"
+      [totalPages]="m.totalPages"
+      [totalItems]="m.totalItems"
+      (pageChange)="onPageChange($event)"
+    />
+  }
+}

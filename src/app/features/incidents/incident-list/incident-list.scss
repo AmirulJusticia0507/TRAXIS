@@ -1,0 +1,15 @@
+.row-actions {
+  &__link {
+    background: none;
+    border: 1px solid var(--status-active);
+    border-radius: var(--radius-sm);
+    padding: 4px var(--spacing-sm);
+    color: var(--status-active);
+    font-size: 0.75rem;
+    cursor: pointer;
+
+    &:hover {
+      background: color-mix(in srgb, var(--status-active) 8%, transparent);
+    }
+  }
+}

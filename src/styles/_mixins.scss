@@ -1,0 +1,17 @@
+// Responsive breakpoints (STYLES.md)
+// Mobile: < 768px | Tablet: 768px - 1024px | Desktop (Control Room): > 1024px
+
+@use 'sass:map';
+
+$breakpoints: (
+  mobile: 768px,
+  tablet: 1024px
+);
+
+@mixin respond($size) {
+  @if map.has-key($breakpoints, $size) {
+    @media (max-width: map.get($breakpoints, $size)) {
+      @content;
+    }
+  }
+}

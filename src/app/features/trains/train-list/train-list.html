@@ -1,0 +1,49 @@
+<app-page-header
+  title="Manajemen Armada Kereta"
+  subtitle="Daftar seluruh armada MRT & KRL"
+>
+  <a class="btn btn--primary" routerLink="/trains/new" data-testid="btn-add-train" pageHeaderActions>
+    Tambah Armada
+  </a>
+</app-page-header>
+
+<ng-template #statusCell let-row>
+  <app-status-badge [status]="row.status" />
+</ng-template>
+
+<ng-template #actionsCell let-row>
+  <div class="row-actions">
+    <a class="row-actions__link" [routerLink]="['/trains', row.id, 'edit']">Edit</a>
+    <button
+      type="button"
+      class="row-actions__link row-actions__link--danger"
+      data-testid="btn-delete-train"
+      (click)="onDelete(row)"
+    >
+      Hapus
+    </button>
+  </div>
+</ng-template>
+
+@if (error(); as message) {
+  <app-error-state [message]="message" (retry)="retry()" />
+} @else {
+  <app-data-table
+    [columns]="columns"
+    [data]="data()"
+    [loading]="loading()"
+    [sortKey]="sortKey()"
+    [sortOrder]="sortOrder()"
+    emptyMessage="Belum ada armada kereta."
+    (sortChange)="onSortChange($event)"
+  />
+
+  @if (meta(); as m) {
+    <app-paginator
+      [page]="m.page"
+      [totalPages]="m.totalPages"
+      [totalItems]="m.totalItems"
+      (pageChange)="onPageChange($event)"
+    />
+  }
+}

@@ -1,0 +1,92 @@
+<app-page-header [title]="title()" subtitle="Data armada disinkronkan dengan tabel trains di PostgreSQL">
+  <a class="btn btn--secondary" routerLink="/trains" pageHeaderActions>Kembali</a>
+</app-page-header>
+
+@if (error(); as message) {
+  <app-error-state [message]="message" (retry)="error.set(null)" />
+}
+
+<form
+  class="form"
+  [formGroup]="form"
+  (ngSubmit)="onSubmit()"
+  novalidate
+  data-testid="train-form"
+>
+  <div class="form__field">
+    <label class="form__label" for="trainCode">Kode Kereta</label>
+    <input
+      id="trainCode"
+      class="form__input"
+      type="text"
+      formControlName="trainCode"
+      placeholder="Contoh: MRT-NS-102"
+      data-testid="input-train-code"
+    />
+    @if (form.controls.trainCode.touched && form.controls.trainCode.invalid) {
+      <p class="form__error" data-testid="error-train-code">
+        @if (form.controls.trainCode.hasError('required')) {
+          Kode kereta wajib diisi.
+        } @else {
+          Kode kereta minimal 3 dan maksimal 20 karakter.
+        }
+      </p>
+    }
+  </div>
+
+  <div class="form__field">
+    <label class="form__label" for="lineId">Jalur / Line</label>
+    <select
+      id="lineId"
+      class="form__input"
+      formControlName="lineId"
+      data-testid="input-train-line"
+    >
+      <option [ngValue]="null" disabled>Pilih jalur...</option>
+      @for (line of lines(); track line.id) {
+        <option [ngValue]="line.id">{{ line.name }} ({{ line.type }})</option>
+      }
+    </select>
+    @if (form.controls.lineId.touched && form.controls.lineId.invalid) {
+      <p class="form__error" data-testid="error-train-line">Jalur wajib dipilih.</p>
+    }
+  </div>
+
+  <div class="form__field">
+    <label class="form__label" for="capacity">Kapasitas</label>
+    <input
+      id="capacity"
+      class="form__input"
+      type="number"
+      min="0"
+      max="3000"
+      formControlName="capacity"
+      data-testid="input-train-capacity"
+    />
+    @if (form.controls.capacity.touched && form.controls.capacity.invalid) {
+      <p class="form__error" data-testid="error-train-capacity">
+        Kapasitas harus antara 0 - 3000.
+      </p>
+    }
+  </div>
+
+  <div class="form__field">
+    <label class="form__label" for="status">Status</label>
+    <select id="status" class="form__input" formControlName="status" data-testid="input-train-status">
+      @for (status of statusOptions; track status) {
+        <option [value]="status">{{ status }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="form__actions">
+    <button
+      type="submit"
+      class="btn btn--primary"
+      data-testid="btn-submit-train"
+      [disabled]="form.invalid || submitting()"
+    >
+      {{ submitting() ? 'Menyimpan...' : isEdit() ? 'Simpan Perubahan' : 'Tambah Armada' }}
+    </button>
+  </div>
+</form>

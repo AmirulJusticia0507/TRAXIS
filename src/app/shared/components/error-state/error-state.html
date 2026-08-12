@@ -1,0 +1,12 @@
+<div class="error-state" data-testid="error-state">
+  <div class="error-state__icon" aria-hidden="true">!</div>
+  <p class="error-state__message">{{ message() }}</p>
+  <button
+    type="button"
+    class="error-state__button"
+    data-testid="btn-retry"
+    (click)="retry.emit()"
+  >
+    Coba Lagi
+  </button>
+</div>

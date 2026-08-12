@@ -1,0 +1,48 @@
+<app-page-header
+  title="Insiden Jalur"
+  subtitle="Monitoring gangguan operasional MRT & KRL"
+>
+  <a class="btn btn--primary" routerLink="/incidents/report" data-testid="btn-report-incident" pageHeaderActions>
+    Lapor Insiden
+  </a>
+</app-page-header>
+
+<ng-template #statusCell let-row>
+  <app-status-badge [status]="row.status" />
+</ng-template>
+
+<ng-template #actionsCell let-row>
+  @if (row.status !== 'RESOLVED') {
+    <button
+      type="button"
+      class="row-actions__link"
+      data-testid="btn-resolve-incident"
+      (click)="onResolve(row)"
+    >
+      Resolve
+    </button>
+  }
+</ng-template>
+
+@if (error(); as message) {
+  <app-error-state [message]="message" (retry)="retry()" />
+} @else {
+  <app-data-table
+    [columns]="columns"
+    [data]="data()"
+    [loading]="loading()"
+    [sortKey]="sortKey()"
+    [sortOrder]="sortOrder()"
+    emptyMessage="Belum ada insiden yang tercatat."
+    (sortChange)="onSortChange($event)"
+  />
+
+  @if (meta(); as m) {
+    <app-paginator
+      [page]="m.page"
+      [totalPages]="m.totalPages"
+      [totalItems]="m.totalItems"
+      (pageChange)="onPageChange($event)"
+    />
+  }
+}
