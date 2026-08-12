@@ -1,6 +1,5 @@
 Overview & Getting Started
 
-
 # 🚆 MRT & KRL Transit Management System (TMS)
 
 Sistem Informasi Manajemen dan Monitoring Operasional Real-time untuk jaringan transportasi publik MRT dan KRL.
@@ -15,8 +14,6 @@ Sistem Informasi Manajemen dan Monitoring Operasional Real-time untuk jaringan t
 - **Tooling:** Angular CLI, ESLint, Jasmine/Karma (Testing)
 
 ## 📁 Repository Structure
-
-
 
 ├── src/
 │   ├── app/

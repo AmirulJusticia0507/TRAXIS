@@ -33,3 +33,4 @@ REST & Mock Service Layer       - Real-time Status Sync       - Production Deplo
 
 - Component test-id attributes        - Test Cases & Bug Reports
 - Form & Table Edge Cases
+scaffold struktur Angular (src/app/core/shared/features) sesuai spek
