@@ -45,8 +45,8 @@ export class LiveMap {
     if (!container) return;
 
     this.map = L.map(container as HTMLElement, {
-      center: [-6.25, 106.87],
-      zoom: 11,
+      center: [-6.23, 106.85],
+      zoom: 10,
       scrollWheelZoom: false
     });
 
@@ -55,14 +55,9 @@ export class LiveMap {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     }).addTo(this.map);
 
-    const points: L.LatLngTuple[] = [];
     for (const route of JAKARTA_ROUTES) {
       const pts = route.coordinates.map(([lat, lng]) => [lat, lng] as L.LatLngTuple);
       L.polyline(pts, { color: route.colorHex, weight: 4, opacity: 0.9 }).addTo(this.map);
-      points.push(...pts);
-    }
-    if (points.length) {
-      this.map.fitBounds(L.latLngBounds(points), { padding: [48, 48] });
     }
 
     this.syncMarkers(this.positions());
