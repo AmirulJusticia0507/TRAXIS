@@ -6,24 +6,24 @@
 /* Marker Leaflet di-inject ke DOM di luar pohon Angular, sehingga
    gaya penampilannya harus global (tidak bisa di-scope per komponen). */
 .live-map__marker {
-  background: transparent;
-  border: none;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 50%;
+  box-shadow: none !important;
 
-  svg {
-    display: block;
-    filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.45));
-  }
-
-  &--in_transit svg {
+  &--in_transit {
     animation: live-map-pulse 1.6s ease-out infinite;
   }
 }
 
 @keyframes live-map-pulse {
   0% {
-    filter: drop-shadow(0 0 0 rgb(10 125 50 / 0.7));
+    box-shadow: 0 0 0 0 rgb(22 163 74 / 0.55);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgb(22 163 74 / 0);
   }
   100% {
-    filter: drop-shadow(0 0 10px rgb(10 125 50 / 0));
+    box-shadow: 0 0 0 0 rgb(22 163 74 / 0);
   }
 }

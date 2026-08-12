@@ -139,22 +139,14 @@ export class LiveMap {
   }
 
   private trainIcon(position: TrainPosition): L.DivIcon {
-    const color = position.train.line.colorHex;
     const status = position.status.toLowerCase();
-    const svg =
-      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="26" height="26" role="img" aria-label="${position.train.trainCode}">` +
-      `<path d="M2 16a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v10z" fill="${color}"/>` +
-      `<circle cx="7" cy="17" r="1.5" fill="#1f2937"/>` +
-      `<circle cx="17" cy="17" r="1.5" fill="#1f2937"/>` +
-      `<rect x="4.5" y="5" width="3.4" height="3.4" rx="1" fill="#fff" opacity=".95"/>` +
-      `<rect x="10.3" y="5" width="3.4" height="3.4" rx="1" fill="#fff" opacity=".95"/>` +
-      `<rect x="16.1" y="5" width="3.4" height="3.4" rx="1" fill="#fff" opacity=".95"/>` +
-      `</svg>`;
+    const emoji = position.train.line.type === 'MRT' ? '🚝' : '🚆';
+    const html = `<span style="display:inline-block;font-size:22px;line-height:1">${emoji}</span>`;
     return L.divIcon({
       className: `live-map__marker live-map__marker--${status}`,
-      html: svg,
-      iconSize: [26, 26],
-      iconAnchor: [13, 13],
+      html,
+      iconSize: [24, 24],
+      iconAnchor: [12, 12],
       popupAnchor: [0, -14]
     });
   }
