@@ -1,1 +1,72 @@
 <div class="live-map" data-testid="live-map"></div>
+
+@if (selected(); as train) {
+  <div class="live-map-modal" data-testid="train-modal" (click)="closeModal()">
+    <div
+      class="live-map-modal__panel"
+      data-testid="train-modal-panel"
+      role="dialog"
+      aria-modal="true"
+      (click)="$event.stopPropagation()"
+    >
+      <button
+        class="live-map-modal__close"
+        type="button"
+        aria-label="Tutup"
+        (click)="closeModal()"
+      >
+        ✕
+      </button>
+
+      <header class="live-map-modal__header">
+        <span
+          class="live-map-modal__emoji"
+          [style.background]="train.train.line.colorHex"
+          aria-hidden="true"
+        >
+          {{ emojiFor(train.train.line.type) }}
+        </span>
+        <div class="live-map-modal__title">
+          <h2>{{ train.train.trainCode }}</h2>
+          <app-status-badge [status]="train.status" />
+        </div>
+      </header>
+
+      <dl class="live-map-modal__rows">
+        <div class="live-map-modal__row">
+          <dt>Jalur</dt>
+          <dd>
+            <span
+              class="live-map-modal__dot"
+              [style.background]="train.train.line.colorHex"
+              aria-hidden="true"
+            ></span>
+            {{ train.train.line.name }}
+          </dd>
+        </div>
+        <div class="live-map-modal__row">
+          <dt>Posisi</dt>
+          <dd>
+            @if (train.currentStation) {
+              {{ train.currentStation.name }}
+            } @else {
+              {{ train.latitude.toFixed(4) }}, {{ train.longitude.toFixed(4) }}
+            }
+          </dd>
+        </div>
+        <div class="live-map-modal__row">
+          <dt>Kecepatan</dt>
+          <dd>{{ formatSpeed(train.speedKmh) }}</dd>
+        </div>
+        <div class="live-map-modal__row">
+          <dt>Kapasitas</dt>
+          <dd>{{ train.train.capacity }} penumpang</dd>
+        </div>
+        <div class="live-map-modal__row">
+          <dt>Update</dt>
+          <dd>{{ formatTime(train.lastUpdatedAt) }}</dd>
+        </div>
+      </dl>
+    </div>
+  </div>
+}

@@ -5,11 +5,15 @@ import {
   effect,
   ElementRef,
   inject,
-  input
+  input,
+  signal
 } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
 import * as L from 'leaflet';
 
+import type { LineType } from '../../../core/models/api.types';
 import type { TrainPosition } from '../../../core/models/position.model';
+import { StatusBadge } from '../status-badge/status-badge';
 import { JAKARTA_ROUTES, stopsToLatLng } from '../../data/jakarta-routes';
 
 interface MarkerState {
@@ -25,22 +29,31 @@ interface MarkerState {
  */
 @Component({
   selector: 'app-live-map',
+  imports: [StatusBadge],
   templateUrl: './live-map.html',
   styleUrl: './live-map.scss'
 })
 export class LiveMap {
   readonly positions = input<TrainPosition[]>([]);
+  readonly selected = signal<TrainPosition | null>(null);
 
   private readonly host = inject(ElementRef<HTMLElement>);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly document = inject(DOCUMENT);
 
   private map: L.Map | null = null;
   private markers = new Map<number, MarkerState>();
   private animationId: number | null = null;
 
+  private readonly onKeydown = (event: KeyboardEvent): void => {
+    if (event.key === 'Escape') this.selected.set(null);
+  };
+
   constructor() {
     afterNextRender(() => this.initMap());
+    this.document.addEventListener('keydown', this.onKeydown);
     this.destroyRef.onDestroy(() => {
+      this.document.removeEventListener('keydown', this.onKeydown);
       this.map?.remove();
       if (this.animationId !== null) cancelAnimationFrame(this.animationId);
     });
@@ -90,9 +103,9 @@ export class LiveMap {
         existing.marker.setIcon(this.trainIcon(position));
       } else {
         const marker = L.marker(target, { icon: this.trainIcon(position) }).addTo(this.map);
+        marker.on('click', () => this.openTrain(position.train.id));
         this.markers.set(position.train.id, { marker, target });
       }
-      this.markers.get(position.train.id)?.marker.bindPopup(this.popupHtml(position));
     }
 
     for (const [id, state] of this.markers) {
@@ -151,8 +164,21 @@ export class LiveMap {
     });
   }
 
-  private popupHtml(position: TrainPosition): string {
-    const station = position.currentStation ? ` - ${position.currentStation.name}` : '';
-    return `<strong>${position.train.trainCode}</strong>${station}<br>${position.train.line.name}<br>${position.speedKmh.toFixed(1)} km/jam`;
+  protected readonly emojiFor = (type: LineType): string => (type === 'MRT' ? '🚝' : '🚆');
+
+  protected readonly formatSpeed = (kmh: number): string => `${kmh.toFixed(0)} km/jam`;
+
+  protected readonly formatTime = (iso: string): string =>
+    new Date(iso).toLocaleTimeString('id-ID', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+
+  protected readonly closeModal = (): void => this.selected.set(null);
+
+  private openTrain(trainId: number): void {
+    const position = this.positions().find((p) => p.train.id === trainId);
+    if (position) this.selected.set(position);
   }
 }

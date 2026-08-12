@@ -7,3 +7,113 @@
   overflow: hidden;
   box-shadow: vars.$shadow-sm;
 }
+
+.live-map-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: vars.$spacing-md;
+  background: rgb(15 23 42 / 0.55);
+  backdrop-filter: blur(2px);
+
+  &__panel {
+    position: relative;
+    width: 100%;
+    max-width: 380px;
+    background: var(--color-surface);
+    border-radius: vars.$radius-md;
+    box-shadow: 0 20px 50px rgb(0 0 0 / 0.25);
+    padding: vars.$spacing-lg;
+  }
+
+  &__close {
+    position: absolute;
+    top: vars.$spacing-sm;
+    right: vars.$spacing-sm;
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--color-text-muted);
+    font-size: 1rem;
+    cursor: pointer;
+
+    &:hover {
+      background: color-mix(in srgb, var(--color-border) 60%, transparent);
+      color: var(--text-dark);
+    }
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: vars.$spacing-md;
+    margin-bottom: vars.$spacing-md;
+  }
+
+  &__emoji {
+    width: 52px;
+    height: 52px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    border-radius: 50%;
+  }
+
+  &__title {
+    display: flex;
+    flex-direction: column;
+    gap: vars.$spacing-xs;
+
+    h2 {
+      margin: 0;
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--text-dark);
+    }
+  }
+
+  &__rows {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: vars.$spacing-sm;
+  }
+
+  &__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: vars.$spacing-sm;
+    font-size: 0.8125rem;
+
+    dt {
+      color: var(--color-text-muted);
+    }
+
+    dd {
+      margin: 0;
+      font-weight: 600;
+      color: var(--text-dark);
+      text-align: right;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+  }
+
+  &__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex: none;
+  }
+}
