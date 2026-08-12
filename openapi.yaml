@@ -1,0 +1,952 @@
+openapi: 3.1.0
+
+info:
+  title: TRAXIS - MRT & KRL Transit Management System API
+  version: 1.0.0
+  description: |
+    REST API contract untuk TRAXIS: Sistem Informasi Manajemen dan Monitoring
+    Operasional Real-time jaringan transportasi publik MRT dan KRL.
+
+    Kontrak ini adalah single source of truth antara Backend (SQL API) dan
+    Frontend Angular. Perubahan schema REST API / SQL wajib dicatat pada issue
+    tracking sebelum dibuat (lihat GUIDELINES.md).
+  contact:
+    name: TRAXIS Team
+  license:
+    name: Proprietary
+
+servers:
+  - url: https://api.traxis.example.com/api/v1
+    description: Production
+  - url: https://staging-api.traxis.example.com/api/v1
+    description: Staging (source maps aktif)
+  - url: http://localhost:8080/api/v1
+    description: Local development
+
+tags:
+  - name: Schedules
+    description: Operasi jadwal real-time kereta (GET /api/v1/schedules)
+  - name: Trains
+    description: Manajemen armada kereta
+  - name: Incidents
+    description: Pencatatan & update insiden jalur
+  - name: Stations
+    description: Referensi stasiun & jalur
+  - name: Live Tracking
+    description: Telemetri posisi kereta real-time
+
+security:
+  - bearerAuth: []
+
+paths:
+  /health:
+    get:
+      tags:
+        - System
+      summary: Health check endpoint
+      operationId: getHealth
+      security: []
+      responses:
+        '200':
+          description: Service sehat
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [ok]
+                    example: ok
+                  database:
+                    type: string
+                    enum: [up, down]
+                    example: up
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: '2026-08-12T09:00:00Z'
+
+  /schedules:
+    get:
+      tags:
+        - Schedules
+      summary: Daftar jadwal kereta real-time (server-side pagination & sorting)
+      description: |
+        Semua operasi filter, sort, dan pagination dikirimkan ke REST API sebagai
+        query parameters (lihat TABLES.md).
+      operationId: listSchedules
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Order'
+        - $ref: '#/components/parameters/LineCode'
+        - $ref: '#/components/parameters/ScheduleStatus'
+        - $ref: '#/components/parameters/DepartureFrom'
+        - $ref: '#/components/parameters/DepartureTo'
+        - $ref: '#/components/parameters/Search'
+      responses:
+        '200':
+          description: Daftar jadwal berhasil dimuat
+          headers:
+            X-Total-Count:
+              schema:
+                type: integer
+              description: Total record tanpa pagination
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Schedule'
+                  meta:
+                    $ref: '#/components/schemas/PageMeta'
+              example:
+                data:
+                  - id: 1001
+                    train: { id: 1, trainCode: 'MRT-NS-101', line: { id: 1, code: 'MRT_NS', name: 'MRT North-South Line', type: 'MRT' } }
+                    originStation: { id: 5, code: 'LB', name: 'Lebak Bulus' }
+                    destinationStation: { id: 11, code: 'HI', name: 'Bundaran HI' }
+                    departureTime: '2026-08-12T06:15:00+07:00'
+                    arrivalTime: '2026-08-12T06:52:00+07:00'
+                    status: ON_TIME
+                meta: { page: 1, limit: 20, totalItems: 342, totalPages: 18 }
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /schedules/{id}:
+    get:
+      tags:
+        - Schedules
+      summary: Detail satu jadwal kereta
+      operationId: getScheduleById
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Detail jadwal ditemukan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Schedule'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /trains:
+    get:
+      tags:
+        - Trains
+      summary: Daftar armada kereta
+      operationId: listTrains
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/TrainStatus'
+        - $ref: '#/components/parameters/LineCode'
+      responses:
+        '200':
+          description: Daftar armada kereta berhasil dimuat
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Train'
+                  meta:
+                    $ref: '#/components/schemas/PageMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      tags:
+        - Trains
+      summary: Tambah armada kereta baru
+      operationId: createTrain
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TrainCreate'
+      responses:
+        '201':
+          description: Armada berhasil dibuat
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Train'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /trains/{id}:
+    get:
+      tags:
+        - Trains
+      summary: Detail satu armada kereta
+      operationId: getTrainById
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Detail armada ditemukan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Train'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    put:
+      tags:
+        - Trains
+      summary: Update data armada kereta (full update)
+      operationId: updateTrain
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TrainUpdate'
+      responses:
+        '200':
+          description: Armada berhasil diperbarui
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Train'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    delete:
+      tags:
+        - Trains
+      summary: Hapus armada kereta
+      description: Soft delete (set status MAINTENANCE/archived) jika direferensikan data historis.
+      operationId: deleteTrain
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '204':
+          description: Armada berhasil dihapus
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /incidents:
+    get:
+      tags:
+        - Incidents
+      summary: Daftar insiden jalur
+      operationId: listIncidents
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/LineType'
+        - $ref: '#/components/parameters/IncidentStatus'
+        - $ref: '#/components/parameters/IncidentFrom'
+        - $ref: '#/components/parameters/IncidentTo'
+      responses:
+        '200':
+          description: Daftar insiden berhasil dimuat
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Incident'
+                  meta:
+                    $ref: '#/components/schemas/PageMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      tags:
+        - Incidents
+      summary: Catat insiden jalur baru
+      description: Form "Pencatatan Insiden Jalur" (lihat FORMS.md)
+      operationId: createIncident
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IncidentCreate'
+      responses:
+        '201':
+          description: Insiden berhasil dicatat
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /incidents/{id}:
+    get:
+      tags:
+        - Incidents
+      summary: Detail satu insiden
+      operationId: getIncidentById
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Detail insiden ditemukan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    put:
+      tags:
+        - Incidents
+      summary: Update insiden (termasuk status)
+      operationId: updateIncident
+      description: |
+        PUT /api/v1/incidents/:id -> update status insiden jalur.
+        Resolving insiden otomatis mengisi resolved_at.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IncidentUpdate'
+      responses:
+        '200':
+          description: Insiden berhasil diperbarui
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /stations:
+    get:
+      tags:
+        - Stations
+      summary: Daftar stasiun (referensi)
+      operationId: listStations
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/LineCode'
+      responses:
+        '200':
+          description: Daftar stasiun berhasil dimuat
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Station'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /lines:
+    get:
+      tags:
+        - Stations
+      summary: Daftar jalur (MRT & KRL)
+      operationId: listLines
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/LineType'
+      responses:
+        '200':
+          description: Daftar jalur berhasil dimuat
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Line'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /positions/live:
+    get:
+      tags:
+        - Live Tracking
+      summary: Posisi real-time seluruh kereta yang beroperasi
+      description: |
+        Endpoint push/poll untuk telemetri kereta. Latency target pembaharuan
+        data status kereta kurang dari 2 detik (lihat GOALS.md). Untuk polling
+        berkala gunakan interval >= 2 detik.
+      operationId: getLivePositions
+      security: []
+      responses:
+        '200':
+          description: Snapshot posisi kereta real-time
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TrainPosition'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          description: Sumber data telemetri tidak tersedia
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Bearer token JWT. Endpoint publik (tanpa security) adalah /health,
+        daftar jadwal, detail jadwal, detail/tambah armada GET, posisi live,
+        dan referensi stasiun/jalur.
+
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      description: ID resource
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+    Page:
+      name: page
+      in: query
+      description: Nomor halaman (1-based)
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        default: 1
+      example: 1
+    Limit:
+      name: limit
+      in: query
+      description: Jumlah item per halaman
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 100
+        default: 20
+      example: 20
+    Sort:
+      name: sort
+      in: query
+      description: Kolom yang di-sort (harus whitelisted backend)
+      schema:
+        type: string
+        enum: [train_code, line_name, origin_station, destination_station, departure_time, arrival_time, status]
+        default: departure_time
+      example: departure_time
+    Order:
+      name: order
+      in: query
+      description: Arah pengurutan
+      schema:
+        type: string
+        enum: [asc, desc]
+        default: asc
+      example: asc
+    Search:
+      name: q
+      in: query
+      description: Pencarian teks bebas (train_code, stasiun, line)
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 100
+      example: 'Bundaran'
+    LineCode:
+      name: line
+      in: query
+      description: Filter berdasarkan kode jalur
+      schema:
+        type: string
+        enum: [MRT_NS, MRT_EW, KRL_RED, KRL_GREEN, KRL_YELLOW, KRL_BLUE]
+      example: KRL_RED
+    LineType:
+      name: lineType
+      in: query
+      description: Filter berdasarkan tipe jalur
+      schema:
+        type: string
+        enum: [MRT, KRL]
+      example: KRL
+    TrainStatus:
+      name: status
+      in: query
+      description: Filter status armada
+      schema:
+        type: string
+        enum: [ACTIVE, MAINTENANCE, DELAYED]
+      example: ACTIVE
+    ScheduleStatus:
+      name: status
+      in: query
+      description: Filter status jadwal (multi-select via koma)
+      schema:
+        type: string
+        example: 'ON_TIME,DELAYED'
+    IncidentStatus:
+      name: status
+      in: query
+      description: Filter status insiden
+      schema:
+        type: string
+        enum: [OPEN, IN_PROGRESS, RESOLVED]
+      example: OPEN
+    DepartureFrom:
+      name: from
+      in: query
+      description: Batas bawah departure_time (ISO 8601)
+      schema:
+        type: string
+        format: date-time
+      example: '2026-08-12T00:00:00+07:00'
+    DepartureTo:
+      name: to
+      in: query
+      description: Batas atas departure_time (ISO 8601)
+      schema:
+        type: string
+        format: date-time
+      example: '2026-08-12T23:59:59+07:00'
+    IncidentFrom:
+      name: from
+      in: query
+      description: Batas bawah reported_at (ISO 8601)
+      schema:
+        type: string
+        format: date-time
+      example: '2026-08-01T00:00:00+07:00'
+    IncidentTo:
+      name: to
+      in: query
+      description: Batas atas reported_at (ISO 8601)
+      schema:
+        type: string
+        format: date-time
+      example: '2026-08-31T23:59:59+07:00'
+
+  responses:
+    BadRequest:
+      description: Request tidak valid (validasi payload / query param)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            error: { code: VALIDATION_ERROR, message: 'delayDuration must be between 0 and 300', details: [{ field: 'delayDuration', message: 'Durasi keterlambatan 0-300 menit.' }] }
+    Unauthorized:
+      description: Token tidak ada / tidak valid / expired
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    NotFound:
+      description: Resource tidak ditemukan
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            error: { code: NOT_FOUND, message: 'Train dengan id 999 tidak ditemukan' }
+    Conflict:
+      description: Konflik data (mis. train_code sudah dipakai)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    InternalError:
+      description: Error server tidak terduga (diteruskan ke dashboard monitor via Global ErrorHandler)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+
+  schemas:
+    Line:
+      type: object
+      required: [id, code, name, type]
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        code:
+          type: string
+          description: Kode jalur unik (sinkron dengan SQL `lines.code`)
+          example: MRT_NS
+        name:
+          type: string
+          example: MRT North-South Line
+        type:
+          $ref: '#/components/schemas/LineType'
+        colorHex:
+          type: string
+          pattern: '^#[0-9A-Fa-f]{6}$'
+          example: '#00529B'
+        isActive:
+          type: boolean
+          default: true
+
+    Station:
+      type: object
+      required: [id, code, name, line]
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 5
+        code:
+          type: string
+          example: LB
+        name:
+          type: string
+          example: Lebak Bulus
+        line:
+          $ref: '#/components/schemas/Line'
+        isActive:
+          type: boolean
+          default: true
+
+    Train:
+      type: object
+      required: [id, trainCode, line, status]
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        trainCode:
+          type: string
+          description: Sinkron dengan SQL `trains.train_code`
+          example: MRT-NS-101
+        line:
+          $ref: '#/components/schemas/Line'
+        capacity:
+          type: integer
+          minimum: 0
+          example: 1200
+        status:
+          $ref: '#/components/schemas/TrainStatus'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    TrainCreate:
+      type: object
+      required: [trainCode, lineId, capacity, status]
+      properties:
+        trainCode:
+          type: string
+          minLength: 3
+          maxLength: 20
+          example: MRT-NS-102
+        lineId:
+          type: integer
+          format: int64
+          example: 1
+        capacity:
+          type: integer
+          minimum: 0
+          maximum: 3000
+          example: 1200
+        status:
+          $ref: '#/components/schemas/TrainStatus'
+
+    TrainUpdate:
+      type: object
+      required: [trainCode, lineId, capacity, status]
+      properties:
+        trainCode:
+          type: string
+          minLength: 3
+          maxLength: 20
+        lineId:
+          type: integer
+          format: int64
+        capacity:
+          type: integer
+          minimum: 0
+          maximum: 3000
+        status:
+          $ref: '#/components/schemas/TrainStatus'
+
+    Schedule:
+      type: object
+      required:
+        - id
+        - train
+        - originStation
+        - destinationStation
+        - departureTime
+        - arrivalTime
+        - status
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1001
+        train:
+          $ref: '#/components/schemas/Train'
+        originStation:
+          $ref: '#/components/schemas/Station'
+        destinationStation:
+          $ref: '#/components/schemas/Station'
+        departureTime:
+          type: string
+          format: date-time
+          example: '2026-08-12T06:15:00+07:00'
+        arrivalTime:
+          type: string
+          format: date-time
+          example: '2026-08-12T06:52:00+07:00'
+        status:
+          $ref: '#/components/schemas/ScheduleStatus'
+
+    Incident:
+      type: object
+      required: [id, lineType, locationStation, delayDurationMinutes, description, status, reportedAt]
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 42
+        lineType:
+          $ref: '#/components/schemas/LineType'
+        train:
+          anyOf:
+            - $ref: '#/components/schemas/Train'
+            - type: 'null'
+        locationStation:
+          type: string
+          minLength: 3
+          example: 'Blok M'
+        delayDurationMinutes:
+          type: integer
+          minimum: 0
+          maximum: 300
+          description: Durasi keterlambatan 0-300 menit
+          example: 25
+        description:
+          type: string
+          maxLength: 500
+          example: 'Sinyal bermasalah di sekitar Stasiun Blok M.'
+        status:
+          $ref: '#/components/schemas/IncidentStatus'
+        reportedAt:
+          type: string
+          format: date-time
+        resolvedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    IncidentCreate:
+      type: object
+      description: Mapping field dari form "Pencatatan Insiden Jalur" (FORMS.md)
+      required: [lineType, locationStation, description]
+      properties:
+        lineType:
+          $ref: '#/components/schemas/LineType'
+        trainId:
+          type: integer
+          format: int64
+          nullable: true
+          example: 12
+        locationStation:
+          type: string
+          minLength: 3
+          maxLength: 100
+          example: 'Blok M'
+        delayDurationMinutes:
+          type: integer
+          minimum: 0
+          maximum: 300
+          default: 0
+          example: 25
+        description:
+          type: string
+          minLength: 1
+          maxLength: 500
+          example: 'Sinyal bermasalah di sekitar Stasiun Blok M.'
+
+    IncidentUpdate:
+      type: object
+      required: [status]
+      properties:
+        status:
+          $ref: '#/components/schemas/IncidentStatus'
+
+    TrainPosition:
+      type: object
+      required: [train, status, latitude, longitude, speedKmh, lastUpdatedAt]
+      properties:
+        train:
+          $ref: '#/components/schemas/Train'
+        currentStation:
+          anyOf:
+            - $ref: '#/components/schemas/Station'
+            - type: 'null'
+        latitude:
+          type: number
+          format: double
+          example: -6.2896
+        longitude:
+          type: number
+          format: double
+          example: 106.8035
+        speedKmh:
+          type: number
+          format: double
+          minimum: 0
+          example: 62.5
+        status:
+          type: string
+          enum: [IN_TRANSIT, AT_STATION, OUT_OF_SERVICE]
+          example: IN_TRANSIT
+        lastUpdatedAt:
+          type: string
+          format: date-time
+
+    PageMeta:
+      type: object
+      required: [page, limit, totalItems, totalPages]
+      properties:
+        page:
+          type: integer
+          format: int32
+          example: 1
+        limit:
+          type: integer
+          format: int32
+          example: 20
+        totalItems:
+          type: integer
+          format: int64
+          example: 342
+        totalPages:
+          type: integer
+          format: int32
+          example: 18
+
+    ApiError:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              enum: [VALIDATION_ERROR, UNAUTHORIZED, NOT_FOUND, CONFLICT, INTERNAL_ERROR, SERVICE_UNAVAILABLE]
+              example: VALIDATION_ERROR
+            message:
+              type: string
+              example: 'Description wajib diisi max 500 karakter.'
+            details:
+              type: array
+              description: Detail error per field (dipakai untuk inline error di form Angular)
+              items:
+                type: object
+                properties:
+                  field:
+                    type: string
+                    example: description
+                  message:
+                    type: string
+                    example: 'Deskripsi wajib diisi max 500 karakter.'
+
+    LineType:
+      type: string
+      enum: [MRT, KRL]
+
+    TrainStatus:
+      type: string
+      description: Sinkron dengan ENUM SQL `train_status` (ACTIVE | MAINTENANCE | DELAYED)
+      enum: [ACTIVE, MAINTENANCE, DELAYED]
+
+    ScheduleStatus:
+      type: string
+      description: Sinkron dengan ENUM SQL `schedule_status`
+      enum: [ON_TIME, DELAYED, CANCELLED, COMPLETED]
+
+    IncidentStatus:
+      type: string
+      description: Sinkron dengan ENUM SQL `incident_status`
+      enum: [OPEN, IN_PROGRESS, RESOLVED]
