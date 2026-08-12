@@ -7,10 +7,13 @@ import type {
 import { HttpResponse } from '@angular/common/http';
 import { delay, of } from 'rxjs';
 
+import { routeById, type RailRoute } from '../../shared/data/jakarta-routes';
+
 import type {
   IncidentStatus,
   LineType,
   Paginated,
+  PositionStatus,
   ScheduleStatus,
   SortOrder,
   TrainStatus
@@ -47,8 +50,31 @@ const rawStations: Array<{ id: number; code: string; name: string; lineId: numbe
   { id: 2, code: 'FH', name: 'Fatmawati', lineId: 1 },
   { id: 3, code: 'BM', name: 'Blok M', lineId: 1 },
   { id: 4, code: 'HI', name: 'Bundaran HI', lineId: 1 },
+  { id: 8, code: 'DA', name: 'Dukuh Atas', lineId: 1 },
+  { id: 9, code: 'SA', name: 'Setiabudi Astra', lineId: 1 },
+  { id: 10, code: 'BH', name: 'Bendungan Hilir', lineId: 1 },
+  { id: 11, code: 'IM', name: 'Istora Mandiri', lineId: 1 },
+  { id: 12, code: 'SN', name: 'Senayan', lineId: 1 },
+  { id: 13, code: 'AS', name: 'ASEAN', lineId: 1 },
+  { id: 14, code: 'BCA', name: 'Blok M BCA', lineId: 1 },
+  { id: 15, code: 'CP', name: 'Cipete Raya', lineId: 1 },
+  { id: 16, code: 'HN', name: 'Haji Nawi', lineId: 1 },
+  { id: 17, code: 'CL', name: 'Cilandak', lineId: 1 },
   { id: 5, code: 'JK', name: 'Jakarta Kota', lineId: 3 },
+  { id: 18, code: 'KB', name: 'Kampung Bandan', lineId: 3 },
   { id: 6, code: 'MN', name: 'Manggarai', lineId: 3 },
+  { id: 19, code: 'TB', name: 'Tebet', lineId: 3 },
+  { id: 20, code: 'CW', name: 'Cawang', lineId: 3 },
+  { id: 21, code: 'DK', name: 'Duren Kalibata', lineId: 3 },
+  { id: 22, code: 'PM', name: 'Pasar Minggu', lineId: 3 },
+  { id: 23, code: 'TA', name: 'Tanjung Barat', lineId: 3 },
+  { id: 24, code: 'LA', name: 'Lenteng Agung', lineId: 3 },
+  { id: 25, code: 'UP', name: 'Univ. Pancasila', lineId: 3 },
+  { id: 26, code: 'DB', name: 'Depok Baru', lineId: 3 },
+  { id: 27, code: 'DP', name: 'Depok', lineId: 3 },
+  { id: 28, code: 'CT', name: 'Citayam', lineId: 3 },
+  { id: 29, code: 'BJ', name: 'Bojonggede', lineId: 3 },
+  { id: 30, code: 'CB', name: 'Cilebut', lineId: 3 },
   { id: 7, code: 'BG', name: 'Bogor', lineId: 3 }
 ];
 
@@ -61,6 +87,7 @@ const stations: Station[] = rawStations.map((s) => ({
 }));
 
 const stationById = (id: number): Station => stations.find((s) => s.id === id) as Station;
+const stationByName = (name: string): Station | null => stations.find((s) => s.name === name) ?? null;
 const lineById = (id: number): Line => lines.find((l) => l.id === id) as Line;
 
 const trains: Train[] = [
@@ -450,15 +477,181 @@ function handleListLines(req: HttpRequest<unknown>): ReturnType<HttpInterceptorF
   return respond(items);
 }
 
+// ---------------------------------------------------------------------------
+// Simulasi pergerakan kereta mengikuti koridor jalur (MRT/KRL)
+// ---------------------------------------------------------------------------
+
+const EARTH_RADIUS_KM = 6371;
+const MOVE_TICK_KM = 2 / 3600; // jarak (km) yang ditempuh dalam 1 tick saat 1 km/jam
+
+interface TrainMotion {
+  route: RailRoute;
+  cumulativeKm: number[];
+  totalKm: number;
+  progress: number;
+  dir: 1 | -1;
+  speedKmh: number;
+  dwellTicks: number;
+  atStation: string | null;
+  lastLat: number;
+  lastLng: number;
+}
+
+const motionById = new Map<number, TrainMotion>();
+
+function haversineKm(aLat: number, aLng: number, bLat: number, bLng: number): number {
+  const dLat = ((bLat - aLat) * Math.PI) / 180;
+  const dLng = ((bLng - aLng) * Math.PI) / 180;
+  const s =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((aLat * Math.PI) / 180) * Math.cos((bLat * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+  return 2 * EARTH_RADIUS_KM * Math.asin(Math.sqrt(s));
+}
+
+function routeForLine(line: Line): RailRoute | undefined {
+  if (line.id === 1) return routeById('MRT_NS');
+  if (line.id === 3) return routeById('KRL_BOGOR');
+  return undefined;
+}
+
+function projectToRoute(
+  route: RailRoute,
+  cumulativeKm: number[],
+  lat: number,
+  lng: number
+): { progress: number; lat: number; lng: number } {
+  const lat0 = (route.stops[0].lat * Math.PI) / 180;
+  const cos0 = Math.cos(lat0);
+  let best = { progress: 0, lat: route.stops[0].lat, lng: route.stops[0].lng, dist: Infinity };
+  for (let i = 0; i < route.stops.length - 1; i++) {
+    const ax = route.stops[i].lng * cos0;
+    const ay = route.stops[i].lat;
+    const bx = route.stops[i + 1].lng * cos0;
+    const by = route.stops[i + 1].lat;
+    const px = lng * cos0;
+    const py = lat;
+    const dx = bx - ax;
+    const dy = by - ay;
+    const lenSq = dx * dx + dy * dy;
+    let t = lenSq ? ((px - ax) * dx + (py - ay) * dy) / lenSq : 0;
+    t = Math.min(1, Math.max(0, t));
+    const cx = ax + dx * t;
+    const cy = ay + dy * t;
+    const dist = Math.hypot(px - cx, py - cy);
+    if (dist < best.dist) {
+      best = {
+        progress: cumulativeKm[i] + t * (cumulativeKm[i + 1] - cumulativeKm[i]),
+        lat: cy,
+        lng: cx / cos0,
+        dist
+      };
+    }
+  }
+  return { progress: best.progress, lat: best.lat, lng: best.lng };
+}
+
+function positionAlongRoute(
+  route: RailRoute,
+  cumulativeKm: number[],
+  progress: number
+): { lat: number; lng: number } {
+  const stops = route.stops;
+  let seg = 0;
+  while (seg < cumulativeKm.length - 2 && progress > cumulativeKm[seg + 1]) seg++;
+  const segLen = cumulativeKm[seg + 1] - cumulativeKm[seg] || 1;
+  const t = Math.min(1, Math.max(0, (progress - cumulativeKm[seg]) / segLen));
+  return {
+    lat: stops[seg].lat + (stops[seg + 1].lat - stops[seg].lat) * t,
+    lng: stops[seg].lng + (stops[seg + 1].lng - stops[seg].lng) * t
+  };
+}
+
+function buildMotion(route: RailRoute, seedLat: number, seedLng: number): TrainMotion {
+  const cumulativeKm: number[] = [0];
+  for (let i = 1; i < route.stops.length; i++) {
+    cumulativeKm.push(
+      cumulativeKm[i - 1] +
+        haversineKm(
+          route.stops[i - 1].lat,
+          route.stops[i - 1].lng,
+          route.stops[i].lat,
+          route.stops[i].lng
+        )
+    );
+  }
+  const totalKm = cumulativeKm[cumulativeKm.length - 1];
+  const start = projectToRoute(route, cumulativeKm, seedLat, seedLng);
+  return {
+    route,
+    cumulativeKm,
+    totalKm,
+    progress: start.progress,
+    dir: 1,
+    speedKmh: 40 + Math.random() * 30,
+    dwellTicks: 0,
+    atStation: null,
+    lastLat: start.lat,
+    lastLng: start.lng
+  };
+}
+
+function nearestStationIndex(motion: TrainMotion, lat: number, lng: number): number {
+  for (let i = 0; i < motion.route.stops.length; i++) {
+    const s = motion.route.stops[i];
+    if (haversineKm(lat, lng, s.lat, s.lng) < 0.25) return i;
+  }
+  return -1;
+}
+
+function stepMotion(
+  motion: TrainMotion
+): { lat: number; lng: number; speedKmh: number; status: PositionStatus; stationName: string | null } {
+  if (motion.dwellTicks > 0) {
+    motion.dwellTicks--;
+    return { lat: motion.lastLat, lng: motion.lastLng, speedKmh: 0, status: 'AT_STATION', stationName: motion.atStation };
+  }
+
+  motion.speedKmh = Math.min(80, Math.max(20, motion.speedKmh + (Math.random() - 0.5) * 8));
+  let next = motion.progress + motion.dir * motion.speedKmh * MOVE_TICK_KM;
+  if (next >= motion.totalKm) {
+    next = motion.totalKm;
+    motion.dir = -1;
+  }
+  if (next <= 0) {
+    next = 0;
+    motion.dir = 1;
+  }
+  motion.progress = next;
+
+  const pos = positionAlongRoute(motion.route, motion.cumulativeKm, motion.progress);
+  motion.lastLat = pos.lat;
+  motion.lastLng = pos.lng;
+
+  const stationIdx = nearestStationIndex(motion, pos.lat, pos.lng);
+  if (stationIdx >= 0) {
+    motion.atStation = motion.route.stops[stationIdx].name;
+    motion.dwellTicks = 1 + Math.floor(Math.random() * 2);
+    return { lat: pos.lat, lng: pos.lng, speedKmh: 0, status: 'AT_STATION', stationName: motion.atStation };
+  }
+  return { lat: pos.lat, lng: pos.lng, speedKmh: motion.speedKmh, status: 'IN_TRANSIT', stationName: null };
+}
+
 function handleLivePositions(): ReturnType<HttpInterceptorFn> {
   const now = new Date().toISOString();
   for (const p of positions) {
-    if (p.status === 'IN_TRANSIT') {
-      const jitter = Math.round((Math.random() * 12 - 4) * 10) / 10;
-      p.speedKmh = Math.max(0, Math.min(80, p.speedKmh + jitter));
-      p.latitude = Math.round((p.latitude + (Math.random() - 0.5) * 0.0004) * 1e6) / 1e6;
-      p.longitude = Math.round((p.longitude + (Math.random() - 0.5) * 0.0004) * 1e6) / 1e6;
+    let motion = motionById.get(p.train.id);
+    if (!motion) {
+      const route = routeForLine(p.train.line);
+      if (!route) continue;
+      motion = buildMotion(route, p.latitude, p.longitude);
+      motionById.set(p.train.id, motion);
     }
+    const step = stepMotion(motion);
+    p.latitude = step.lat;
+    p.longitude = step.lng;
+    p.speedKmh = step.speedKmh;
+    p.status = step.status;
+    p.currentStation = step.stationName ? stationByName(step.stationName) : null;
     p.lastUpdatedAt = now;
   }
   return respond([...positions]);
