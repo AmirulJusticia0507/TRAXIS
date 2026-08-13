@@ -59,11 +59,16 @@ export class LiveMap {
     });
 
     effect(() => {
+      const w = window as unknown as { __lm?: string[] };
+      (w.__lm ??= []).push(`effect n=${this.positions().length}`);
       if (this.map) this.syncMarkers(this.positions());
     });
   }
 
   private initMap(): void {
+    const w = window as unknown as { __diag?: string[] };
+    (w.__diag ??= []).push('initMap called');
+    document.title = 'DIAG_RAN_' + Date.now();
     const container = this.host.nativeElement.querySelector('[data-testid="live-map"]');
     if (!container) return;
 

@@ -482,7 +482,9 @@ function handleListLines(req: HttpRequest<unknown>): ReturnType<HttpInterceptorF
 // ---------------------------------------------------------------------------
 
 const EARTH_RADIUS_KM = 6371;
-const MOVE_TICK_KM = 2 / 3600; // jarak (km) yang ditempuh dalam 1 tick saat 1 km/jam
+// Jarak (km) yang ditempuh dalam 1 tick saat kecepatan 1 km/jam.
+// 1 tick = 1 menit simulasi (dipercepat agar pergerakan terlihat jelas di peta).
+const MOVE_TICK_KM = 1 / 60;
 
 interface TrainMotion {
   route: RailRoute;
